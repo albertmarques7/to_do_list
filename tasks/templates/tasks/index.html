@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            color: #2980b9; /* Blue */
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 350px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        button {
+            background-color: #e74c3c; /* Red */
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        #tasks {
+            margin-top: 20px;
+            width: 350px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .task {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .task:last-child {
+            border-bottom: none;
+        }
+
+        .task .title {
+            font-weight: bold;
+        }
+
+        .task .description {
+            margin-left: 10px;
+        }
+
+        .task button {
+            background-color: #3498db; /* Blue */
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .task button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>To-Do List</h1>
+    <form id="task-form">
+        <input type="text" id="title" placeholder="Título" required>
+        <input type="text" id="description" placeholder="Tarefa">
+        <button type="submit">Adicionar tarefa</button>
+    </form>
+    <div id="tasks"></div>
+
+    <script>
+        document.getElementById('task-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            
+            try {
+                const response = await fetch('/api/tasks/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, description, done: false })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to add task');
+                }
+
+                document.getElementById('title').value = '';
+                document.getElementById('description').value = '';
+                loadTasks();
+            } catch (error) {
+                console.error(error.message);
+            }
+        });
+
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks/');
+                if (!response.ok) {
+                    throw new Error('Failed to load tasks');
+                }
+                const tasks = await response.json();
+                const tasksDiv = document.getElementById('tasks');
+                tasksDiv.innerHTML = '';
+                tasks.forEach(task => {
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = 'task';
+                    taskDiv.innerHTML = `
+                        <div class="title">${task.title}</div>
+                        <div class="description">${task.description}</div>
+                        <button onclick="deleteTask(${task.id})">Delete</button>
+                    `;
+                    tasksDiv.appendChild(taskDiv);
+                });
+            } catch (error) {
+                console.error(error.message);
+            }
+        }
+
+        async function deleteTask(id) {
+            try {
+                const response = await fetch(`/api/tasks/${id}/`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to delete task');
+                }
+                loadTasks();
+            } catch (error) {
+                console.error(error.message);
+            }
+        }
+
+        loadTasks();
+    </script>
+</body>
+</html>
